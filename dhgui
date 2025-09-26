@@ -1,0 +1,61 @@
+-- Fly Script (Auto-Enabled)
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
+-- Fly parameters
+local flySpeed = 50
+local flying = true
+
+-- Create BodyGyro and BodyVelocity
+local root = character:WaitForChild("HumanoidRootPart")
+local bg = Instance.new("BodyGyro", root)
+bg.P = 90000
+bg.maxTorque = Vector3.new(9000000000, 9000000000, 9000000000)
+bg.cframe = root.CFrame
+
+local bv = Instance.new("BodyVelocity", root)
+bv.velocity = Vector3.new(0,0,0)
+bv.maxForce = Vector3.new(9000000000, 9000000000, 9000000000)
+
+-- Disable humanoid animations
+humanoid.PlatformStand = true
+character.Animate.Disabled = true
+
+-- Fly controls
+local ctrl = {f=0,b=0,l=0,r=0}
+local lastctrl = {f=0,b=0,l=0,r=0}
+local speed = 0
+local maxSpeed = flySpeed
+
+local uis = game:GetService("UserInputService")
+uis.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.W then ctrl.f=1 end
+    if input.KeyCode == Enum.KeyCode.S then ctrl.b= -1 end
+    if input.KeyCode == Enum.KeyCode.A then ctrl.l= -1 end
+    if input.KeyCode == Enum.KeyCode.D then ctrl.r=1 end
+end)
+uis.InputEnded:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.W then ctrl.f=0 end
+    if input.KeyCode == Enum.KeyCode.S then ctrl.b=0 end
+    if input.KeyCode == Enum.KeyCode.A then ctrl.l=0 end
+    if input.KeyCode == Enum.KeyCode.D then ctrl.r=0 end
+end)
+
+-- Fly loop
+spawn(function()
+    while flying do
+        task.wait()
+        local move = ctrl.f + ctrl.b ~= 0 or ctrl.l + ctrl.r ~= 0
+        if move then
+            speed = math.clamp(speed + 1, 0, maxSpeed)
+        else
+            speed = math.clamp(speed - 1, 0, maxSpeed)
+        end
+
+        local camCFrame = workspace.CurrentCamera.CFrame
+        local direction = (camCFrame.LookVector * (ctrl.f + ctrl.b)) + ((camCFrame * CFrame.new(ctrl.l + ctrl.r, 0, 0).p) - camCFrame.p)
+        bv.velocity = direction * speed
+        bg.cframe = camCFrame
+    end
+end)
